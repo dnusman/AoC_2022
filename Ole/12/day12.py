@@ -15,30 +15,37 @@ heights = np.array([list(map(lambda x: ord(x)-96, x)) for x in heights])
 print(heights)
 
 paths = [[startpos]]
-for path_idx, path in enumerate(paths):
-    # remove the path from path lists
-    current_tile = path[-1]
+paths_created = 1
+
+while paths_created:
     paths_created = 0
 
-    # find the adjecent cells that are accessible
-    for direction in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
-        print(f"at {current_tile}, going {direction}")
-        new_tile = [current_tile[0] - direction[0],
-                    current_tile[1] - direction[1]]
-        if (np.array(new_tile) >= 0).all() and \
-                new_tile[0] <= heights.shape[0] and \
-                new_tile[1] <= heights.shape[1] and \
-                heights[new_tile[0], new_tile[1]] <= \
-                heights[current_tile[0], current_tile[1]]+1 and \
-                new_tile != endpos and \
-                new_tile not in path:
-            newpath = path + [new_tile]
-            print(f"appending {newpath}")
-            paths.append(newpath)
-            paths_created += 1
+    for path_idx, path in enumerate(paths):
+        # remove the path from path lists
+        current_tile = path[-1]
+        paths_created = 0
 
-    paths.pop(path_idx)
-    if paths_created == 0:
-        break
+        print(f"at {current_tile}")
+        # find the adjecent cells that are accessible
+        for direction in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+            new_tile = [current_tile[0] + direction[0],
+                        current_tile[1] + direction[1]]
+            if (np.array(new_tile) >= 0).all() and \
+                    new_tile[0] < heights.shape[0] and \
+                    new_tile[1] < heights.shape[1] and \
+                    heights[new_tile[0], new_tile[1]] <= \
+                    heights[current_tile[0], current_tile[1]]+1 and \
+                    new_tile != endpos and \
+                    new_tile not in path:
+                newpath = path + [new_tile]
+                if new_tile == endpos:
+                    print(f"answer is {len(path)+1}")
+                    break
+                print(f"appending {newpath}")
+                paths.append(newpath)
+                paths_created += 1
 
-print(min([len(x) for x in paths]))
+        paths.pop(path_idx)
+        print(f"total paths are: {paths}")
+
+print(min([len(x) for x in paths if endpos in x]))
