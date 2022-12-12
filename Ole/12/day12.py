@@ -1,51 +1,60 @@
 import numpy as np
 import pdb
-with open("input-test") as f:
-    heights = np.array([list(x) for x in f.read().splitlines()])
+with open("input") as f:
+    heights = [list(x) for x in f.read().splitlines()]
 
-startpos = np.where(heights == "S")
-startpos = [startpos[0][0], startpos[1][0]]
-heights[startpos[0], startpos[1]] = "a"
-endpos = np.where(heights == "E")
-endpos = [endpos[0][0], endpos[1][0]]
-heights[endpos[0], endpos[1]] = "z"
+start_y = [y for y in range(len(heights)) if 'S' in heights[y]][0]
+start_x = heights[start_y].index('S')
+end_y = [y for y in range(len(heights)) if 'E' in heights[y]][0]
+end_x = heights[end_y].index('E')
+heights[start_y][start_x] = "a"
+heights[end_y][end_x] = "z"
 
+heights = [list(map(lambda x: ord(x)-96, x)) for x in heights]
+Y = len(heights)
+X = len(heights[0])
 
-heights = np.array([list(map(lambda x: ord(x)-96, x)) for x in heights])
-print(heights)
+fastest = [[X*Y]*X for _ in range(Y)]
+fastest[start_y][start_x] = 0
 
-paths = [[startpos]]
-paths_created = 1
+# comment for pt1, uncomment for pt2
+for x in range(X):
+    for y in range(Y):
+        if heights[y][x] == 1:
+            fastest[y][x] = 0
+# end pt2 mod
 
-while paths_created:
-    paths_created = 0
+paths_updated = 1 # set to 1 to enter loop
+loop_stop = 0
 
-    for path_idx, path in enumerate(paths):
-        # remove the path from path lists
-        current_tile = path[-1]
-        paths_created = 0
+while loop_stop < 10:
+    
+    paths_updated = 0
+    
+    # loop over cells
+    for x in range(X):
+        for y in range(Y):
+               
+            # find the adjecent cells that are accessible
+            for d in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+                new_y = y + d[0]
+                new_x = x + d[1]
+                
+                # check if valid step
+                if new_y < 0 or new_y >= Y or new_x < 0 or new_x >= X or \
+                    heights[new_y][new_x] > heights[y][x]+1:
+                    continue
+                
+                # update path length with current tile + 1
+                if fastest[new_y][new_x] > fastest[y][x]+1:
+                    fastest[new_y][new_x] = fastest[y][x]+1
+                    paths_updated += 1
+    
+    #print(f"current solution is {fastest[end_y][end_x]}")
+            
+    if paths_updated == 0:
+        loop_stop += 1
+    else:
+        loop_stop = 0
 
-        print(f"at {current_tile}")
-        # find the adjecent cells that are accessible
-        for direction in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
-            new_tile = [current_tile[0] + direction[0],
-                        current_tile[1] + direction[1]]
-            if (np.array(new_tile) >= 0).all() and \
-                    new_tile[0] < heights.shape[0] and \
-                    new_tile[1] < heights.shape[1] and \
-                    heights[new_tile[0], new_tile[1]] <= \
-                    heights[current_tile[0], current_tile[1]]+1 and \
-                    new_tile != endpos and \
-                    new_tile not in path:
-                newpath = path + [new_tile]
-                if new_tile == endpos:
-                    print(f"answer is {len(path)+1}")
-                    break
-                print(f"appending {newpath}")
-                paths.append(newpath)
-                paths_created += 1
-
-        paths.pop(path_idx)
-        print(f"total paths are: {paths}")
-
-print(min([len(x) for x in paths if endpos in x]))
+print(fastest[end_y][end_x])
