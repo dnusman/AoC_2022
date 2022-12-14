@@ -1,39 +1,40 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import pdb
 with open("input") as f:
     scans = f.read().splitlines()
 
 rocks = set()
-sand_rest = []
+sand_rest = set()
 sand_flow = []
 mapje = np.zeros((180, 60))
+abyss = 0
 
 for scan in scans:
     points = [list(map(int, x.split(','))) for x in scan.split(" -> ")]
     for i in range(0, len(points)-1):
+        # loop over points and take the next one
         for x in range(min(points[i][0], points[i+1][0]),
                        max(points[i][0], points[i+1][0])+1):
             for y in range(min(points[i][1], points[i+1][1]),
-                        max(points[i][1], points[i+1][1])+1):
+                           max(points[i][1], points[i+1][1])+1):
                 rocks.add((x, y))
-                mapje[y, x-465] = 1
+                abyss = max(y, abyss)
+                # mapje[y, x-465] = 1
 
-plt.imshow(mapje)
-plt.ion()
-plt.show(block=False)
+for x in range(0, 1000):
+    rocks.add((x, abyss+2))
 
-for ts in range(10000):
-    if ts % 500 == 0:
+# plt.imshow(mapje)
+# plt.ion()
+# plt.show(block=False)
+solved_pt_1 = 0
+
+for ts in range(150000):
+    if ts % 5000 == 0:
         print(f"At ts {ts}")
-        plt.imshow(mapje)
-        plt.show()
-        plt.pause(0.0001)
-        #print(sand_flow)
-        #print(sand_rest)
 
     # add sand
     sand_flow.append((500, 0))
-    new_sand_resting = 0
 
     # move all sand_flow
     for idx, grain_pos in enumerate(sand_flow):
@@ -43,18 +44,18 @@ for ts in range(10000):
             if next_pos not in rocks and next_pos not in sand_rest:
                 # move sand grain to new position
                 sand_flow[idx] = next_pos
+                if next_pos[1] > abyss and not solved_pt_1:
+                    solved_pt_1 = 1
+                    print(f"Answer part 1 is {len(sand_rest)}")
+
                 break
 
-        if sand_flow[idx] != next_pos:
+        if sand_flow[idx] == grain_pos:
+
             # sand cannot move -- make it stationary
-            new_sand_resting = 1
-            sand_rest.append(grain_pos)
-            mapje[grain_pos[1], grain_pos[0]-465] = 2
+            sand_rest.add((grain_pos))
             sand_flow.pop(idx)
 
-    if not new_sand_resting and ts > 1000:
-        break
-
-print(f"Answer part 1 is {len(sand_rest)}")
-
-
+        if len(sand_flow) == 1 and ts > 1:
+            print(f"Answer part 2 is {len((sand_rest))}")
+            exit(0)
