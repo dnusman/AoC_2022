@@ -3,7 +3,7 @@ with open("input") as f:
 
 
 def comes_before(l, r):
-    # returns 1 if left > right, 0 if right < left and None if right = left
+    # returns 1 if left < right, 0 if right > left and None if right = left
 
     # print(f"\nChecking {l} v. {r}")
 
