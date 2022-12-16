@@ -1,0 +1,6 @@
+import re
+
+with open("input-test") as f:
+    sensors = [re.findall("\d+", x) for x in f.read().splitlines()]
+
+print(sensors)
