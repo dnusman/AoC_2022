@@ -85,6 +85,10 @@ stopped = []
 stopped = stopped + bottom
 
 for x in range(2022):
+  if x % 100 == 0:
+    stopped = stopped[-50:]
+  if x % 10000 == 0:
+    print(x)
   shape = shapes[x%5]
   moving = True
   coords = coordinates_shape(shape,highest_rock)
@@ -92,11 +96,12 @@ for x in range(2022):
   while moving:
     # move down
     coords,check = check_valid_gravity(coords,stopped)
-#     print(coords)
+
     if not check:
       moving = False
       stopped.extend(coords)
       highest_rock = max(highest_rock,max([i[1] for i in coords]))
+
       continue
     # jet
     jet= jets[jet_i]
@@ -104,9 +109,9 @@ for x in range(2022):
 #     print(coords)
     jet_i +=1
     if jet_i == len(jets):
-      jet_i = 0 
-
-print(f'Answer 1: {highest_rock}')
+      jet_i = 0
+  if x == 2021:
+    print(f'Answer 1: {highest_rock}')
 
     
     
