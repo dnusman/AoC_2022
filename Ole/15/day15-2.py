@@ -1,53 +1,55 @@
 import re
 
-with open("input-test") as f:
+with open("input") as f:
     sensors = [tuple(map(int, re.findall(r"-*\d+", x))) for
                x in f.read().splitlines()]
 
-# store begin & end points of coverage in a dict with structure
-# {row: [(begin_cover1, end_cover1), (begin_cover2, end_cover2), ..]}
-
-partial_rows = {}
-full_rows = []
 search_min = 0
-search_max = 20
+search_max = 4000000
 
-for (sx, sy, bx, by) in sensors:
+def merge_intervals(intervals):
+    # merges list of intervals
+    # returns new list
+    
+    # compare each interval with the subsequent intervals in the list
+    for interval1 in intervals[:-1]:
+        for interval2 in intervals[intervals.index(interval1)+1:]:
+            match_right = interval1[0] <= interval2[1]+1 and interval1[0] >= interval2[0]
+            match_left = interval1[1] >= interval2[0]-1 and interval1[1] <= interval2[1]
+            match_right2 = interval2[0] <= interval1[1]+1 and interval2[0] >= interval1[0]
+            match_left2 = interval2[1] >= interval1[0]-1 and interval2[1] <= interval1[1]
 
-    # calculate manhattan distance as abs difference in y + x
-    d = abs(sy - by) + abs(sx - bx)
-    print(f"Analyzing sensor {sx}, {sy} seeing beacon {bx}, {by} at dist {d}")
+            
+            if match_right or match_left or match_left2 or match_right2:
+                merged_interval = (min(interval1[0], interval2[0]), max(interval1[1], interval2[1]))
+                intervals[intervals.index(interval2)] = merged_interval
+                intervals.pop(intervals.index(interval1))
+                
+    return intervals
 
-    for row in [r for r in range(sy-d, sy+d+1) if r not in full_rows]:
+for row in range(search_min, search_max+1):
+    if row % (search_max // 100) == 0:
+        print(f"Analyzing rows, at {(row / search_max) * 100}%")
+        
+    sorted_sensors = sorted(sensors, key=lambda x: abs(x[1]-row))
+    row_coverage = []
+    row_covered = False
+    for (sx, sy, bx, by) in sorted_sensors:
+        d = abs(sy - by) + abs(sx - bx)
         coverage_width = d - abs(sy-row)
-        row_coverage = (sx - coverage_width, sx + coverage_width)
-        # print(f"At row {row}, cw={coverage_width}, c = {row_coverage}")
+        new_interval = (sx - coverage_width, sx + coverage_width)
+        row_coverage = merge_intervals(row_coverage + [new_interval])
+        
+        # check if row fully covered
+        if len(row_coverage) == 1 and row_coverage[0][0] <= search_min and \
+                                      row_coverage[0][1] >= search_max:
+            row_covered = True
+            break
+    if not row_covered:
+        break
+  
+print(f"Row where the beacon must be: {row, row_coverage}")
+y = row
+x = min([x[1] for x in row_coverage]) + 1 # smallest endpoint of 2 intervals
 
-        if row in partial_rows:
-            # check if in already existing interval, if so update that interval
-            in_other_interval = False
-            for idx, interval in enumerate(partial_rows[row]):
-                if interval[0] <= row_coverage[0]:
-                    partial_rows[row][idx] = (interval[0],
-                                              max(interval[1],
-                                                  row_coverage[1]))
-                    in_other_interval = True
-                elif interval[1] >= row_coverage[1]:
-                    partial_rows[row][idx] = (min(interval[0],
-                                                  row_coverage[0]),
-                                              interval[1])
-                    in_other_interval = True
-
-            if not in_other_interval:
-                partial_rows[row].append(row_coverage)
-        else:
-            partial_rows[row] = [row_coverage]
-
-        if len(partial_rows[row]) == 1 and \
-                partial_rows[row][0][0] <= search_min and \
-                partial_rows[row][0][1] >= search_max:
-            # row is fully covered, no longer inspect it
-            full_rows += [row]
-            partial_rows.pop(row)
-
-print(partial_rows)
+print(f"Answer is therefore {x*4000000+y}")  
