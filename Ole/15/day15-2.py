@@ -10,41 +10,66 @@ search_max = 4000000
 def merge_intervals(intervals):
     # merges list of intervals
     # returns new list
+    # first had a unwieldy solution for this, stole this cleaner solution
+    # from hyperneutrino
     
-    # compare each interval with the subsequent intervals in the list
-    for interval1 in intervals[:-1]:
-        for interval2 in intervals[intervals.index(interval1)+1:]:
-            match_right = interval1[0] <= interval2[1]+1 and interval1[0] >= interval2[0]
-            match_left = interval1[1] >= interval2[0]-1 and interval1[1] <= interval2[1]
-            match_right2 = interval2[0] <= interval1[1]+1 and interval2[0] >= interval1[0]
-            match_left2 = interval2[1] >= interval1[0]-1 and interval2[1] <= interval1[1]
-
+    # sort such that all lows are descending 
+    # (if the same low, sort will automatically look at the high)
+    intervals.sort() 
+    
+    # initiate list of merged intervals
+    merged = []
+    
+    for lo, hi in intervals:
+        if not merged:
+            merged.append([lo, hi])
+            continue
+        
+        qhi = merged[-1][1]
+        
+        if lo > qhi+1:
+            merged.append([lo, hi])
+            continue
+        
+        merged[-1][1] = max(hi, qhi)
             
-            if match_right or match_left or match_left2 or match_right2:
-                merged_interval = (min(interval1[0], interval2[0]), max(interval1[1], interval2[1]))
-                intervals[intervals.index(interval2)] = merged_interval
-                intervals.pop(intervals.index(interval1))
-                
-    return intervals
+    return merged
 
 for row in range(search_min, search_max+1):
-    if row % (search_max // 100) == 0:
-        print(f"Analyzing rows, at {(row / search_max) * 100}%")
+    # output status (takes 1-2secs per %p on my machine)
+    if row % (search_max // 10) == 0:
+        print(f"Analyzing rows, at {(row / search_max) * 100:.0f}%")
         
+    # sort sensors based on proximity to the row -- check most likely candidates to fully fill the row first
     sorted_sensors = sorted(sensors, key=lambda x: abs(x[1]-row))
+    
+    # initiate coverage trackers for this row
     row_coverage = []
     row_covered = False
+    
+    # loop over sensors
     for (sx, sy, bx, by) in sorted_sensors:
+        
+        # calculate "Manhattan radius" of sensor & coverage width in this row
         d = abs(sy - by) + abs(sx - bx)
         coverage_width = d - abs(sy-row)
-        new_interval = (sx - coverage_width, sx + coverage_width)
-        row_coverage = merge_intervals(row_coverage + [new_interval])
         
-        # check if row fully covered
-        if len(row_coverage) == 1 and row_coverage[0][0] <= search_min and \
-                                      row_coverage[0][1] >= search_max:
-            row_covered = True
-            break
+        # if out of range, don't look at this sensor
+        if coverage_width < 0:
+            continue
+                
+        # calculate interval of coverage in this row
+        new_interval = (sx - coverage_width, sx + coverage_width)
+        row_coverage.append(new_interval)
+    
+    row_coverage = merge_intervals(row_coverage)
+     
+    # check if row fully covered, if so, no need to look at other sensors and on to the next row
+    if len(row_coverage) == 1 and row_coverage[0][0] <= search_min and \
+                                    row_coverage[0][1] >= search_max:
+        row_covered = True
+    
+    # if loop completed without fully covering row, there must be a distress beacon!
     if not row_covered:
         break
   
