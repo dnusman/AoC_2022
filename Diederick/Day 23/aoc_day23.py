@@ -78,6 +78,7 @@ def get_proposed_position(elf):
 round = 0
 moved = True
 while moved:
+  print(round)
   round +=1
   moved = False
   #round 1: get proposed position
