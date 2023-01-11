@@ -29,11 +29,7 @@ hashtags = set()
 for i in range(len(df)):
   
   sensors.append((df[i][0],df[i][1]))
-  beacons.append((df[i][2],df[i][3]))  
-
-
-
-    
+  beacons.append((df[i][2],df[i][3]))
 
 # COMMAND ----------
 
